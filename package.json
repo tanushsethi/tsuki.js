@@ -1,0 +1,16 @@
+{
+  "name": "tsuki.js",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "A small, from-scratch UI library with fine-grained signal reactivity. Light as the moon.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
