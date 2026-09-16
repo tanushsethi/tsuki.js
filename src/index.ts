@@ -1,6 +1,7 @@
 import type { TsukiElement } from "./types";
 
 export { createElement } from "./createElement";
+export { render } from "./render";
 export type { TsukiChild, TsukiElement } from "./types";
 
 export namespace JSX {
