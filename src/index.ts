@@ -1,13 +1,13 @@
 import type { TsukiElement } from "./types";
 
 export { createElement } from "./createElement";
-export { render } from "./render";
+export { Fragment, render } from "./render";
 export type { TsukiChild, TsukiElement } from "./types";
 
 export namespace JSX {
   export type Element = TsukiElement;
 
   export interface IntrinsicElements {
-    [name: string]: Record<string, unknown>;
+    [name: string]: unknown;
   }
 }

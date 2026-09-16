@@ -1,5 +1,7 @@
 import type { TsukiElement } from "./types";
 
+export const Fragment = "FRAGMENT";
+
 const isEvent = (key: string) => key.startsWith("on");
 
 function setProps(dom: Node, props: TsukiElement["props"]): void {
@@ -18,6 +20,11 @@ function setProps(dom: Node, props: TsukiElement["props"]): void {
 }
 
 export function render(element: TsukiElement, container: Node): void {
+  if (element.type === Fragment) {
+    element.props.children.forEach((child) => render(child, container));
+    return;
+  }
+
   const dom =
     element.type === "TEXT_ELEMENT"
       ? document.createTextNode("")
