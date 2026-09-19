@@ -1,3 +1,4 @@
+import type { Fiber } from "./fiber";
 import type { TsukiElement } from "./types";
 
 export const Fragment = "FRAGMENT";
@@ -19,9 +20,9 @@ function setProps(dom: Node, props: TsukiElement["props"]): void {
     });
 }
 
-export function render(element: TsukiElement, container: Node): void {
+function renderElement(element: TsukiElement, container: Node): void {
   if (element.type === Fragment) {
-    element.props.children.forEach((child) => render(child, container));
+    element.props.children.forEach((child) => renderElement(child, container));
     return;
   }
 
@@ -32,7 +33,27 @@ export function render(element: TsukiElement, container: Node): void {
 
   setProps(dom, element.props);
 
-  element.props.children.forEach((child) => render(child, dom));
+  element.props.children.forEach((child) => renderElement(child, dom));
 
   container.appendChild(dom);
+}
+
+let nextUnitOfWork: Fiber | undefined;
+
+export function render(element: TsukiElement, container: Node): void {
+  nextUnitOfWork = {
+    dom: container,
+    props: { children: [element] },
+  };
+
+  while (nextUnitOfWork) {
+    const fiber = nextUnitOfWork;
+    const parentDom = fiber.dom;
+
+    if (parentDom) {
+      fiber.props.children.forEach((child) => renderElement(child, parentDom));
+    }
+
+    nextUnitOfWork = undefined;
+  }
 }
