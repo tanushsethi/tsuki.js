@@ -20,22 +20,59 @@ function setProps(dom: Node, props: TsukiElement["props"]): void {
     });
 }
 
-function renderElement(element: TsukiElement, container: Node): void {
-  if (element.type === Fragment) {
-    element.props.children.forEach((child) => renderElement(child, container));
-    return;
+function createDom(type: string, props: TsukiElement["props"]): Node {
+  const dom =
+    type === "TEXT_ELEMENT"
+      ? document.createTextNode("")
+      : document.createElement(type);
+
+  setProps(dom, props);
+
+  return dom;
+}
+
+function domParentOf(fiber: Fiber): Node | undefined {
+  let ancestor = fiber.parent;
+
+  while (ancestor && !ancestor.dom) {
+    ancestor = ancestor.parent;
   }
 
-  const dom =
-    element.type === "TEXT_ELEMENT"
-      ? document.createTextNode("")
-      : document.createElement(element.type);
+  return ancestor?.dom;
+}
 
-  setProps(dom, element.props);
+function linkChildren(fiber: Fiber): void {
+  let previous: Fiber | undefined;
 
-  element.props.children.forEach((child) => renderElement(child, dom));
+  fiber.props.children.forEach((element) => {
+    const child: Fiber = {
+      type: element.type,
+      props: element.props,
+      parent: fiber,
+    };
 
-  container.appendChild(dom);
+    if (previous) {
+      previous.sibling = child;
+    } else {
+      fiber.child = child;
+    }
+
+    previous = child;
+  });
+}
+
+function performUnitOfWork(fiber: Fiber): void {
+  const type = fiber.type;
+
+  if (!fiber.dom && type !== undefined && type !== Fragment) {
+    fiber.dom = createDom(type, fiber.props);
+  }
+
+  if (fiber.dom && fiber.parent) {
+    domParentOf(fiber)?.appendChild(fiber.dom);
+  }
+
+  linkChildren(fiber);
 }
 
 let nextUnitOfWork: Fiber | undefined;
@@ -46,14 +83,19 @@ export function render(element: TsukiElement, container: Node): void {
     props: { children: [element] },
   };
 
+  const pending: Fiber[] = [];
+
   while (nextUnitOfWork) {
     const fiber = nextUnitOfWork;
-    const parentDom = fiber.dom;
 
-    if (parentDom) {
-      fiber.props.children.forEach((child) => renderElement(child, parentDom));
+    performUnitOfWork(fiber);
+
+    let child = fiber.child;
+    while (child) {
+      pending.push(child);
+      child = child.sibling;
     }
 
-    nextUnitOfWork = undefined;
+    nextUnitOfWork = pending.shift();
   }
 }
