@@ -61,7 +61,7 @@ function linkChildren(fiber: Fiber): void {
   });
 }
 
-function performUnitOfWork(fiber: Fiber): void {
+function performUnitOfWork(fiber: Fiber): Fiber | undefined {
   const type = fiber.type;
 
   if (!fiber.dom && type !== undefined && type !== Fragment) {
@@ -73,6 +73,22 @@ function performUnitOfWork(fiber: Fiber): void {
   }
 
   linkChildren(fiber);
+
+  if (fiber.child) {
+    return fiber.child;
+  }
+
+  let current: Fiber | undefined = fiber;
+
+  while (current) {
+    if (current.sibling) {
+      return current.sibling;
+    }
+
+    current = current.parent;
+  }
+
+  return undefined;
 }
 
 let nextUnitOfWork: Fiber | undefined;
@@ -83,19 +99,7 @@ export function render(element: TsukiElement, container: Node): void {
     props: { children: [element] },
   };
 
-  const pending: Fiber[] = [];
-
   while (nextUnitOfWork) {
-    const fiber = nextUnitOfWork;
-
-    performUnitOfWork(fiber);
-
-    let child = fiber.child;
-    while (child) {
-      pending.push(child);
-      child = child.sibling;
-    }
-
-    nextUnitOfWork = pending.shift();
+    nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
   }
 }
