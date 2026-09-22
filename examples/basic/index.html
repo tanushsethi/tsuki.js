@@ -13,10 +13,20 @@
         background: #0b0d17;
         color: #e8e8f0;
       }
+      #frames {
+        font-variant-numeric: tabular-nums;
+      }
+      #rows {
+        max-height: 14rem;
+        overflow-y: auto;
+        border: 1px solid currentColor;
+        padding: 0.5rem;
+      }
     </style>
   </head>
   <body>
     <div id="root"></div>
+    <p id="frames">counting frames…</p>
     <script type="module" src="/main.tsx"></script>
   </body>
 </html>
