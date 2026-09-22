@@ -93,13 +93,24 @@ function performUnitOfWork(fiber: Fiber): Fiber | undefined {
 
 let nextUnitOfWork: Fiber | undefined;
 
+function workLoop(deadline: IdleDeadline): void {
+  let shouldYield = false;
+
+  while (nextUnitOfWork && !shouldYield) {
+    nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
+    shouldYield = deadline.timeRemaining() < 1;
+  }
+
+  if (nextUnitOfWork) {
+    requestIdleCallback(workLoop);
+  }
+}
+
 export function render(element: TsukiElement, container: Node): void {
   nextUnitOfWork = {
     dom: container,
     props: { children: [element] },
   };
 
-  while (nextUnitOfWork) {
-    nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
-  }
+  requestIdleCallback(workLoop);
 }
