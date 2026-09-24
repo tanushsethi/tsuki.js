@@ -68,10 +68,6 @@ function performUnitOfWork(fiber: Fiber): Fiber | undefined {
     fiber.dom = createDom(type, fiber.props);
   }
 
-  if (fiber.dom && fiber.parent) {
-    domParentOf(fiber)?.appendChild(fiber.dom);
-  }
-
   linkChildren(fiber);
 
   if (fiber.child) {
