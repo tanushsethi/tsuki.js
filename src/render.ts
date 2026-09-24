@@ -92,6 +92,27 @@ function performUnitOfWork(fiber: Fiber): Fiber | undefined {
 }
 
 let nextUnitOfWork: Fiber | undefined;
+let wipRoot: Fiber | undefined;
+
+function commitWork(fiber: Fiber | undefined): void {
+  let current = fiber;
+
+  while (current) {
+    if (current.dom) {
+      domParentOf(current)?.appendChild(current.dom);
+    }
+
+    commitWork(current.child);
+
+    current = current.sibling;
+  }
+}
+
+function commitRoot(): void {
+  commitWork(wipRoot?.child);
+
+  wipRoot = undefined;
+}
 
 function workLoop(deadline: IdleDeadline): void {
   let shouldYield = false;
@@ -103,14 +124,18 @@ function workLoop(deadline: IdleDeadline): void {
 
   if (nextUnitOfWork) {
     requestIdleCallback(workLoop);
+  } else if (wipRoot) {
+    commitRoot();
   }
 }
 
 export function render(element: TsukiElement, container: Node): void {
-  nextUnitOfWork = {
+  wipRoot = {
     dom: container,
     props: { children: [element] },
   };
+
+  nextUnitOfWork = wipRoot;
 
   requestIdleCallback(workLoop);
 }
