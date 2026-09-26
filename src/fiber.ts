@@ -7,4 +7,5 @@ export type Fiber = {
   parent?: Fiber;
   child?: Fiber;
   sibling?: Fiber;
+  alternate?: Fiber;
 };

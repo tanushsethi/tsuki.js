@@ -89,6 +89,7 @@ function performUnitOfWork(fiber: Fiber): Fiber | undefined {
 
 let nextUnitOfWork: Fiber | undefined;
 let wipRoot: Fiber | undefined;
+let currentRoot: Fiber | undefined;
 
 function commitWork(fiber: Fiber | undefined): void {
   let current = fiber;
@@ -107,6 +108,7 @@ function commitWork(fiber: Fiber | undefined): void {
 function commitRoot(): void {
   commitWork(wipRoot?.child);
 
+  currentRoot = wipRoot;
   wipRoot = undefined;
 }
 
@@ -129,6 +131,7 @@ export function render(element: TsukiElement, container: Node): void {
   wipRoot = {
     dom: container,
     props: { children: [element] },
+    alternate: currentRoot,
   };
 
   nextUnitOfWork = wipRoot;
