@@ -41,15 +41,29 @@ function domParentOf(fiber: Fiber): Node | undefined {
   return ancestor?.dom;
 }
 
-function linkChildren(fiber: Fiber): void {
+function reconcileChildren(fiber: Fiber, elements: TsukiElement[]): void {
+  let oldFiber = fiber.alternate?.child;
   let previous: Fiber | undefined;
 
-  fiber.props.children.forEach((element) => {
-    const child: Fiber = {
-      type: element.type,
-      props: element.props,
-      parent: fiber,
-    };
+  elements.forEach((element) => {
+    const old = oldFiber;
+
+    const child: Fiber =
+      old && old.type === element.type
+        ? {
+            type: old.type,
+            dom: old.dom,
+            props: element.props,
+            parent: fiber,
+            alternate: old,
+          }
+        : {
+            type: element.type,
+            props: element.props,
+            parent: fiber,
+          };
+
+    oldFiber = old?.sibling;
 
     if (previous) {
       previous.sibling = child;
@@ -68,7 +82,7 @@ function performUnitOfWork(fiber: Fiber): Fiber | undefined {
     fiber.dom = createDom(type, fiber.props);
   }
 
-  linkChildren(fiber);
+  reconcileChildren(fiber, fiber.props.children);
 
   if (fiber.child) {
     return fiber.child;
