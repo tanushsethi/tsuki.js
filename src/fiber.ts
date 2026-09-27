@@ -1,5 +1,7 @@
 import type { TsukiElement } from "./types";
 
+export type EffectTag = "PLACEMENT" | "UPDATE";
+
 export type Fiber = {
   type?: string;
   dom?: Node;
@@ -8,4 +10,5 @@ export type Fiber = {
   child?: Fiber;
   sibling?: Fiber;
   alternate?: Fiber;
+  effectTag?: EffectTag;
 };

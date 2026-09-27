@@ -56,11 +56,13 @@ function reconcileChildren(fiber: Fiber, elements: TsukiElement[]): void {
             props: element.props,
             parent: fiber,
             alternate: old,
+            effectTag: "UPDATE",
           }
         : {
             type: element.type,
             props: element.props,
             parent: fiber,
+            effectTag: "PLACEMENT",
           };
 
     oldFiber = old?.sibling;
@@ -109,7 +111,7 @@ function commitWork(fiber: Fiber | undefined): void {
   let current = fiber;
 
   while (current) {
-    if (current.dom) {
+    if (current.effectTag === "PLACEMENT" && current.dom) {
       domParentOf(current)?.appendChild(current.dom);
     }
 
