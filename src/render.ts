@@ -65,6 +65,11 @@ function reconcileChildren(fiber: Fiber, elements: TsukiElement[]): void {
             effectTag: "PLACEMENT",
           };
 
+    if (old && old.type !== element.type) {
+      old.effectTag = "DELETION";
+      deletions.push(old);
+    }
+
     oldFiber = old?.sibling;
 
     if (previous) {
@@ -75,6 +80,12 @@ function reconcileChildren(fiber: Fiber, elements: TsukiElement[]): void {
 
     previous = child;
   });
+
+  while (oldFiber) {
+    oldFiber.effectTag = "DELETION";
+    deletions.push(oldFiber);
+    oldFiber = oldFiber.sibling;
+  }
 }
 
 function performUnitOfWork(fiber: Fiber): Fiber | undefined {
@@ -106,6 +117,7 @@ function performUnitOfWork(fiber: Fiber): Fiber | undefined {
 let nextUnitOfWork: Fiber | undefined;
 let wipRoot: Fiber | undefined;
 let currentRoot: Fiber | undefined;
+let deletions: Fiber[] = [];
 
 function commitWork(fiber: Fiber | undefined): void {
   let current = fiber;
@@ -121,7 +133,24 @@ function commitWork(fiber: Fiber | undefined): void {
   }
 }
 
+function commitDeletion(fiber: Fiber): void {
+  if (fiber.dom) {
+    domParentOf(fiber)?.removeChild(fiber.dom);
+    return;
+  }
+
+  let child = fiber.child;
+
+  while (child) {
+    commitDeletion(child);
+
+    child = child.sibling;
+  }
+}
+
 function commitRoot(): void {
+  deletions.forEach(commitDeletion);
+
   commitWork(wipRoot?.child);
 
   currentRoot = wipRoot;
@@ -150,6 +179,7 @@ export function render(element: TsukiElement, container: Node): void {
     alternate: currentRoot,
   };
 
+  deletions = [];
   nextUnitOfWork = wipRoot;
 
   requestIdleCallback(workLoop);

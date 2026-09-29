@@ -1,6 +1,6 @@
 import type { TsukiElement } from "./types";
 
-export type EffectTag = "PLACEMENT" | "UPDATE";
+export type EffectTag = "PLACEMENT" | "UPDATE" | "DELETION";
 
 export type Fiber = {
   type?: string;
