@@ -15,6 +15,13 @@ function updateDom(
   next: TsukiElement["props"]
 ): void {
   Object.keys(previous)
+    .filter(isEvent)
+    .filter((key) => !(key in next) || previous[key] !== next[key])
+    .forEach((key) => {
+      dom.removeEventListener(eventName(key), previous[key] as EventListener);
+    });
+
+  Object.keys(previous)
     .filter(isProperty)
     .filter((key) => !(key in next))
     .forEach((key) => {
@@ -27,13 +34,12 @@ function updateDom(
     .forEach((key) => {
       (dom as unknown as Record<string, unknown>)[key] = next[key];
     });
-}
 
-function addListeners(dom: Node, props: TsukiElement["props"]): void {
-  Object.keys(props)
+  Object.keys(next)
     .filter(isEvent)
+    .filter((key) => previous[key] !== next[key])
     .forEach((key) => {
-      dom.addEventListener(eventName(key), props[key] as EventListener);
+      dom.addEventListener(eventName(key), next[key] as EventListener);
     });
 }
 
@@ -44,7 +50,6 @@ function createDom(type: string, props: TsukiElement["props"]): Node {
       : document.createElement(type);
 
   updateDom(dom, { children: [] }, props);
-  addListeners(dom, props);
 
   return dom;
 }
