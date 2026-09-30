@@ -5,18 +5,35 @@ export const Fragment = "FRAGMENT";
 
 const isEvent = (key: string) => key.startsWith("on");
 
-function setProps(dom: Node, props: TsukiElement["props"]): void {
-  Object.keys(props)
-    .filter((key) => key !== "children")
+const isProperty = (key: string) => key !== "children" && !isEvent(key);
+
+const eventName = (key: string) => key.toLowerCase().slice(2);
+
+function updateDom(
+  dom: Node,
+  previous: TsukiElement["props"],
+  next: TsukiElement["props"]
+): void {
+  Object.keys(previous)
+    .filter(isProperty)
+    .filter((key) => !(key in next))
     .forEach((key) => {
-      if (isEvent(key)) {
-        dom.addEventListener(
-          key.toLowerCase().slice(2),
-          props[key] as EventListener
-        );
-      } else {
-        (dom as unknown as Record<string, unknown>)[key] = props[key];
-      }
+      (dom as unknown as Record<string, unknown>)[key] = "";
+    });
+
+  Object.keys(next)
+    .filter(isProperty)
+    .filter((key) => previous[key] !== next[key])
+    .forEach((key) => {
+      (dom as unknown as Record<string, unknown>)[key] = next[key];
+    });
+}
+
+function addListeners(dom: Node, props: TsukiElement["props"]): void {
+  Object.keys(props)
+    .filter(isEvent)
+    .forEach((key) => {
+      dom.addEventListener(eventName(key), props[key] as EventListener);
     });
 }
 
@@ -26,7 +43,8 @@ function createDom(type: string, props: TsukiElement["props"]): Node {
       ? document.createTextNode("")
       : document.createElement(type);
 
-  setProps(dom, props);
+  updateDom(dom, { children: [] }, props);
+  addListeners(dom, props);
 
   return dom;
 }
@@ -125,6 +143,10 @@ function commitWork(fiber: Fiber | undefined): void {
   while (current) {
     if (current.effectTag === "PLACEMENT" && current.dom) {
       domParentOf(current)?.appendChild(current.dom);
+    }
+
+    if (current.effectTag === "UPDATE" && current.dom && current.alternate) {
+      updateDom(current.dom, current.alternate.props, current.props);
     }
 
     commitWork(current.child);
