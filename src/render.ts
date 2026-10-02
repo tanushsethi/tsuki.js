@@ -5,7 +5,11 @@ export const Fragment = "FRAGMENT";
 
 const isEvent = (key: string) => key.startsWith("on");
 
-const isProperty = (key: string) => key !== "children" && !isEvent(key);
+const isProperty = (key: string) =>
+  key !== "children" && key !== "key" && !isEvent(key);
+
+const keyOf = (props: TsukiElement["props"]) =>
+  props.key === undefined ? undefined : String(props.key);
 
 const eventName = (key: string) => key.toLowerCase().slice(2);
 
@@ -65,35 +69,62 @@ function domParentOf(fiber: Fiber): Node | undefined {
 }
 
 function reconcileChildren(fiber: Fiber, elements: TsukiElement[]): void {
-  let oldFiber = fiber.alternate?.child;
+  const oldChildren: Fiber[] = [];
+  const oldIndexes = new Map<Fiber, number>();
+  const oldByKey = new Map<string, Fiber>();
+
+  for (let old = fiber.alternate?.child; old; old = old.sibling) {
+    const key = keyOf(old.props);
+
+    oldIndexes.set(old, oldChildren.length);
+    oldChildren.push(old);
+
+    if (key !== undefined) {
+      oldByKey.set(key, old);
+    }
+  }
+
+  const reused = new Set<Fiber>();
+  let furthestReused = -1;
   let previous: Fiber | undefined;
 
-  elements.forEach((element) => {
-    const old = oldFiber;
+  elements.forEach((element, index) => {
+    const key = keyOf(element.props);
+    const candidate = key === undefined ? oldChildren[index] : oldByKey.get(key);
 
-    const child: Fiber =
-      old && old.type === element.type
-        ? {
-            type: old.type,
-            dom: old.dom,
-            props: element.props,
-            parent: fiber,
-            alternate: old,
-            effectTag: "UPDATE",
-          }
-        : {
-            type: element.type,
-            props: element.props,
-            parent: fiber,
-            effectTag: "PLACEMENT",
-          };
+    const old =
+      candidate &&
+      !reused.has(candidate) &&
+      candidate.type === element.type &&
+      keyOf(candidate.props) === key
+        ? candidate
+        : undefined;
 
-    if (old && old.type !== element.type) {
-      old.effectTag = "DELETION";
-      deletions.push(old);
+    let child: Fiber;
+
+    if (old) {
+      const oldIndex = oldIndexes.get(old) ?? 0;
+
+      reused.add(old);
+
+      child = {
+        type: old.type,
+        dom: old.dom,
+        props: element.props,
+        parent: fiber,
+        alternate: old,
+        effectTag: oldIndex < furthestReused ? "PLACEMENT" : "UPDATE",
+      };
+
+      furthestReused = Math.max(furthestReused, oldIndex);
+    } else {
+      child = {
+        type: element.type,
+        props: element.props,
+        parent: fiber,
+        effectTag: "PLACEMENT",
+      };
     }
-
-    oldFiber = old?.sibling;
 
     if (previous) {
       previous.sibling = child;
@@ -104,11 +135,12 @@ function reconcileChildren(fiber: Fiber, elements: TsukiElement[]): void {
     previous = child;
   });
 
-  while (oldFiber) {
-    oldFiber.effectTag = "DELETION";
-    deletions.push(oldFiber);
-    oldFiber = oldFiber.sibling;
-  }
+  oldChildren
+    .filter((old) => !reused.has(old))
+    .forEach((old) => {
+      old.effectTag = "DELETION";
+      deletions.push(old);
+    });
 }
 
 function performUnitOfWork(fiber: Fiber): Fiber | undefined {
@@ -150,7 +182,7 @@ function commitWork(fiber: Fiber | undefined): void {
       domParentOf(current)?.appendChild(current.dom);
     }
 
-    if (current.effectTag === "UPDATE" && current.dom && current.alternate) {
+    if (current.alternate && current.dom) {
       updateDom(current.dom, current.alternate.props, current.props);
     }
 
