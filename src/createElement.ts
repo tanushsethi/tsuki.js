@@ -1,7 +1,7 @@
-import type { TsukiChild, TsukiElement } from "./types";
+import type { TsukiChild, TsukiComponent, TsukiElement } from "./types";
 
 export function createElement(
-  type: string,
+  type: string | TsukiComponent,
   props?: Record<string, unknown> | null,
   ...children: TsukiChild[]
 ): TsukiElement {

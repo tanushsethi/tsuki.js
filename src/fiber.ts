@@ -1,9 +1,9 @@
-import type { TsukiElement } from "./types";
+import type { TsukiComponent, TsukiElement } from "./types";
 
 export type EffectTag = "PLACEMENT" | "UPDATE" | "DELETION";
 
 export type Fiber = {
-  type?: string;
+  type?: string | TsukiComponent;
   dom?: Node;
   props: TsukiElement["props"];
   parent?: Fiber;

@@ -1,5 +1,5 @@
 import type { Fiber } from "./fiber";
-import type { TsukiElement } from "./types";
+import type { TsukiComponent, TsukiElement } from "./types";
 
 export const Fragment = "FRAGMENT";
 
@@ -143,14 +143,26 @@ function reconcileChildren(fiber: Fiber, elements: TsukiElement[]): void {
     });
 }
 
-function performUnitOfWork(fiber: Fiber): Fiber | undefined {
-  const type = fiber.type;
-
+function updateHostComponent(fiber: Fiber, type: string | undefined): void {
   if (!fiber.dom && type !== undefined && type !== Fragment) {
     fiber.dom = createDom(type, fiber.props);
   }
 
   reconcileChildren(fiber, fiber.props.children);
+}
+
+function updateFunctionComponent(fiber: Fiber, component: TsukiComponent): void {
+  reconcileChildren(fiber, [component(fiber.props)]);
+}
+
+function performUnitOfWork(fiber: Fiber): Fiber | undefined {
+  const type = fiber.type;
+
+  if (typeof type === "function") {
+    updateFunctionComponent(fiber, type);
+  } else {
+    updateHostComponent(fiber, type);
+  }
 
   if (fiber.child) {
     return fiber.child;
