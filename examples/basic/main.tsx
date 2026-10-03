@@ -10,15 +10,21 @@ const rows = Tsuki.createElement(
   )
 );
 
-const element = (
-  <div id="app">
-    <h1>tsuki.js</h1>
+function Masthead(props: { tagline: string }): Tsuki.JSX.Element {
+  return (
     <>
-      <p>A small, from-scratch UI library with fine-grained signal reactivity.</p>
+      <h1>tsuki.js</h1>
+      <p>{props.tagline}</p>
       <button onClick={() => document.body.classList.toggle("night")}>
         toggle the night sky
       </button>
     </>
+  );
+}
+
+const element = (
+  <div id="app">
+    <Masthead tagline="A small, from-scratch UI library with fine-grained signal reactivity." />
     {rows}
   </div>
 );
