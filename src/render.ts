@@ -1,4 +1,5 @@
 import type { Fiber } from "./fiber";
+import { prepareHooks } from "./hooks";
 import type { TsukiComponent, TsukiElement } from "./types";
 
 export const Fragment = "FRAGMENT";
@@ -152,6 +153,8 @@ function updateHostComponent(fiber: Fiber, type: string | undefined): void {
 }
 
 function updateFunctionComponent(fiber: Fiber, component: TsukiComponent): void {
+  prepareHooks(fiber);
+
   reconcileChildren(fiber, [component(fiber.props)]);
 }
 
