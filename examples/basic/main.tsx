@@ -10,6 +10,20 @@ const rows = Tsuki.createElement(
   )
 );
 
+function Moons(): Tsuki.JSX.Element {
+  const [count, setCount] = Tsuki.useState(0);
+
+  return (
+    <p id="moons">
+      <button onClick={() => setCount((previous) => previous + 1)}>
+        count a moon
+      </button>
+      {" "}
+      {count} counted
+    </p>
+  );
+}
+
 function Masthead(props: { tagline: string }): Tsuki.JSX.Element {
   return (
     <>
@@ -18,6 +32,7 @@ function Masthead(props: { tagline: string }): Tsuki.JSX.Element {
       <button onClick={() => document.body.classList.toggle("night")}>
         toggle the night sky
       </button>
+      <Moons />
     </>
   );
 }
