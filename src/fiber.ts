@@ -4,6 +4,7 @@ export type EffectTag = "PLACEMENT" | "UPDATE" | "DELETION";
 
 export type Hook = {
   state: unknown;
+  queue: unknown[];
 };
 
 export type Fiber = {

@@ -153,7 +153,7 @@ function updateHostComponent(fiber: Fiber, type: string | undefined): void {
 }
 
 function updateFunctionComponent(fiber: Fiber, component: TsukiComponent): void {
-  prepareHooks(fiber);
+  prepareHooks(fiber, requestRerender);
 
   reconcileChildren(fiber, [component(fiber.props)]);
 }
@@ -244,6 +244,23 @@ function workLoop(deadline: IdleDeadline): void {
   } else if (wipRoot) {
     commitRoot();
   }
+}
+
+function requestRerender(): void {
+  if (currentRoot === undefined) {
+    return;
+  }
+
+  wipRoot = {
+    dom: currentRoot.dom,
+    props: currentRoot.props,
+    alternate: currentRoot,
+  };
+
+  deletions = [];
+  nextUnitOfWork = wipRoot;
+
+  requestIdleCallback(workLoop);
 }
 
 export function render(element: TsukiElement, container: Node): void {
