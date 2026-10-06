@@ -1,5 +1,5 @@
 import type { Fiber } from "./fiber";
-import { prepareHooks } from "./hooks";
+import { flushEffects, prepareHooks, runHookCleanups } from "./hooks";
 import type { TsukiComponent, TsukiElement } from "./types";
 
 export const Fragment = "FRAGMENT";
@@ -222,13 +222,28 @@ function commitDeletion(fiber: Fiber): void {
   }
 }
 
+function cleanUpSubtree(fiber: Fiber): void {
+  runHookCleanups(fiber.hooks);
+
+  let child = fiber.child;
+
+  while (child) {
+    cleanUpSubtree(child);
+
+    child = child.sibling;
+  }
+}
+
 function commitRoot(): void {
+  deletions.forEach(cleanUpSubtree);
   deletions.forEach(commitDeletion);
 
   commitWork(wipRoot?.child);
 
   currentRoot = wipRoot;
   wipRoot = undefined;
+
+  flushEffects();
 }
 
 function workLoop(deadline: IdleDeadline): void {

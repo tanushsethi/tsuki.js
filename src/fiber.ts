@@ -2,10 +2,19 @@ import type { TsukiComponent, TsukiElement } from "./types";
 
 export type EffectTag = "PLACEMENT" | "UPDATE" | "DELETION";
 
-export type Hook = {
+export type StateHook = {
+  kind: "state";
   state: unknown;
   queue: unknown[];
 };
+
+export type EffectHook = {
+  kind: "effect";
+  deps?: unknown[];
+  cleanup?: () => void;
+};
+
+export type Hook = StateHook | EffectHook;
 
 export type Fiber = {
   type?: string | TsukiComponent;
