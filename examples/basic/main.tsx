@@ -13,6 +13,10 @@ const rows = Tsuki.createElement(
 function Moons(): Tsuki.JSX.Element {
   const [count, setCount] = Tsuki.useState(0);
 
+  Tsuki.useEffect(() => {
+    document.title = count === 0 ? "tsuki.js" : `tsuki.js — ${count} moons`;
+  }, [count]);
+
   return (
     <p id="moons">
       <button onClick={() => setCount((previous) => previous + 1)}>
