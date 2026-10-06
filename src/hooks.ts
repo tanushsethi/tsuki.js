@@ -1,4 +1,4 @@
-import type { EffectHook, Fiber, Hook, StateHook } from "./fiber";
+import type { EffectHook, Fiber, Hook, MemoHook, StateHook } from "./fiber";
 
 type StateUpdater<T> = (previous: T) => T;
 
@@ -114,4 +114,23 @@ export function useEffect(effect: EffectCallback, deps?: unknown[]): void {
   }
 
   finishHook(hook);
+}
+
+export function useMemo<T>(create: () => T, deps: unknown[]): T {
+  const previous = startHook("useMemo");
+  const previousMemo = previous?.kind === "memo" ? previous : undefined;
+
+  const hook: MemoHook = {
+    kind: "memo",
+    value: sameDeps(previousMemo?.deps, deps) ? previousMemo?.value : create(),
+    deps,
+  };
+
+  finishHook(hook);
+
+  return hook.value as T;
+}
+
+export function useRef<T>(initial: T): { current: T } {
+  return useMemo(() => ({ current: initial }), []);
 }

@@ -2,7 +2,7 @@ import type { TsukiElement } from "./types";
 
 export { createElement } from "./createElement";
 export { Fragment, render } from "./render";
-export { useEffect, useState } from "./hooks";
+export { useEffect, useMemo, useRef, useState } from "./hooks";
 export type { TsukiChild, TsukiComponent, TsukiElement } from "./types";
 
 export namespace JSX {

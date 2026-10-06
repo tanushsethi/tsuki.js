@@ -14,7 +14,13 @@ export type EffectHook = {
   cleanup?: () => void;
 };
 
-export type Hook = StateHook | EffectHook;
+export type MemoHook = {
+  kind: "memo";
+  value: unknown;
+  deps: unknown[];
+};
+
+export type Hook = StateHook | EffectHook | MemoHook;
 
 export type Fiber = {
   type?: string | TsukiComponent;
