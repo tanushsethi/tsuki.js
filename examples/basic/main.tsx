@@ -2,6 +2,10 @@ import * as Tsuki from "../../src/index";
 
 const ROW_COUNT = 10000;
 
+const PHASES = ["new", "waxing", "full", "waning"];
+
+const [phase, turnMoon] = Tsuki.createSignal(0);
+
 const rows = Tsuki.createElement(
   "div",
   { id: "rows" },
@@ -37,6 +41,11 @@ function Masthead(props: { tagline: string }): Tsuki.JSX.Element {
         toggle the night sky
       </button>
       <Moons />
+      <button
+        onClick={() => turnMoon((previous) => (previous + 1) % PHASES.length)}
+      >
+        turn the moon
+      </button>
     </>
   );
 }
@@ -47,6 +56,12 @@ const element = (
     {rows}
   </div>
 );
+
+const phaseLabel = document.querySelector<HTMLParagraphElement>("#phase")!;
+
+Tsuki.createEffect(() => {
+  phaseLabel.textContent = `${PHASES[phase()]} moon`;
+}, [phase]);
 
 const frames = document.querySelector<HTMLParagraphElement>("#frames")!;
 const started = performance.now();
