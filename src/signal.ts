@@ -6,14 +6,33 @@ export type SignalWrite<T> = (next: T | SignalUpdater<T>) => void;
 
 export type Signal<T> = [SignalRead<T>, SignalWrite<T>];
 
-const listenersOf = new WeakMap<object, Set<() => void>>();
+type Listener = {
+  run: () => void;
+  sources: Set<Set<Listener>>;
+};
+
+const listening: Listener[] = [];
+
+function forget(listener: Listener): void {
+  listener.sources.forEach((subscribers) => subscribers.delete(listener));
+  listener.sources.clear();
+}
 
 export function createSignal<T>(initial: T): Signal<T> {
   let value = initial;
 
-  const listeners = new Set<() => void>();
+  const subscribers = new Set<Listener>();
 
-  const read: SignalRead<T> = () => value;
+  const read: SignalRead<T> = () => {
+    const listener = listening[listening.length - 1];
+
+    if (listener) {
+      subscribers.add(listener);
+      listener.sources.add(subscribers);
+    }
+
+    return value;
+  };
 
   const write: SignalWrite<T> = (next) => {
     const resolved =
@@ -25,33 +44,29 @@ export function createSignal<T>(initial: T): Signal<T> {
 
     value = resolved;
 
-    Array.from(listeners).forEach((listener) => listener());
+    Array.from(subscribers).forEach((listener) => listener.run());
   };
-
-  listenersOf.set(read, listeners);
 
   return [read, write];
 }
 
-export function createEffect(
-  effect: () => void,
-  sources: ReadonlyArray<SignalRead<unknown>>
-): () => void {
-  const subscriptions = sources.map((source) => {
-    const listeners = listenersOf.get(source);
+export function createEffect(effect: () => void): () => void {
+  const listener: Listener = {
+    run: () => {
+      forget(listener);
 
-    if (listeners === undefined) {
-      throw new Error("createEffect only subscribes to signal readers");
-    }
+      listening.push(listener);
 
-    return listeners;
-  });
-
-  effect();
-
-  subscriptions.forEach((listeners) => listeners.add(effect));
-
-  return () => {
-    subscriptions.forEach((listeners) => listeners.delete(effect));
+      try {
+        effect();
+      } finally {
+        listening.pop();
+      }
+    },
+    sources: new Set(),
   };
+
+  listener.run();
+
+  return () => forget(listener);
 }

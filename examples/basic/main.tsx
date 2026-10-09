@@ -61,7 +61,7 @@ const phaseLabel = document.querySelector<HTMLParagraphElement>("#phase")!;
 
 Tsuki.createEffect(() => {
   phaseLabel.textContent = `${PHASES[phase()]} moon`;
-}, [phase]);
+});
 
 const frames = document.querySelector<HTMLParagraphElement>("#frames")!;
 const started = performance.now();
