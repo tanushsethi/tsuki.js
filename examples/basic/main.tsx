@@ -60,6 +60,13 @@ function Masthead(props: { tagline: string }): Tsuki.JSX.Element {
       <button onClick={() => showNote((previous) => !previous)}>
         show the note
       </button>
+      <p id="phase">
+        {() =>
+          noteShown()
+            ? `${PHASES[phase()]} moon, ${NOTES[note()]}`
+            : `${PHASES[phase()]} moon`
+        }
+      </p>
     </>
   );
 }
@@ -70,14 +77,6 @@ const element = (
     {rows}
   </div>
 );
-
-const phaseLabel = document.querySelector<HTMLParagraphElement>("#phase")!;
-
-Tsuki.createEffect(() => {
-  phaseLabel.textContent = noteShown()
-    ? `${PHASES[phase()]} moon, ${NOTES[note()]}`
-    : `${PHASES[phase()]} moon`;
-});
 
 const frames = document.querySelector<HTMLParagraphElement>("#frames")!;
 const started = performance.now();
