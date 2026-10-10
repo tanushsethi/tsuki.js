@@ -32,4 +32,5 @@ export type Fiber = {
   alternate?: Fiber;
   effectTag?: EffectTag;
   hooks?: Hook[];
+  dispose?: () => void;
 };

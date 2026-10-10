@@ -8,4 +8,6 @@ export type TsukiElement = {
 
 export type TsukiComponent = (props: TsukiElement["props"]) => TsukiElement;
 
-export type TsukiChild = TsukiElement | string | number;
+export type TsukiTextSource = () => string | number;
+
+export type TsukiChild = TsukiElement | string | number | TsukiTextSource;

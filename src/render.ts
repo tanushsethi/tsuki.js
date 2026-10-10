@@ -1,6 +1,7 @@
 import type { Fiber } from "./fiber";
 import { flushEffects, prepareHooks, runHookCleanups } from "./hooks";
-import type { TsukiComponent, TsukiElement } from "./types";
+import { createEffect } from "./signal";
+import type { TsukiComponent, TsukiElement, TsukiTextSource } from "./types";
 
 export const Fragment = "FRAGMENT";
 
@@ -49,6 +50,10 @@ function updateDom(
 }
 
 function createDom(type: string, props: TsukiElement["props"]): Node {
+  if (type === "REACTIVE_TEXT") {
+    return document.createTextNode("");
+  }
+
   const dom =
     type === "TEXT_ELEMENT"
       ? document.createTextNode("")
@@ -189,6 +194,28 @@ let wipRoot: Fiber | undefined;
 let currentRoot: Fiber | undefined;
 let deletions: Fiber[] = [];
 
+function bindReactiveText(fiber: Fiber): void {
+  const dom = fiber.dom;
+  const source = fiber.props.text;
+
+  if (dom === undefined || typeof source !== "function") {
+    return;
+  }
+
+  const previous = fiber.alternate;
+
+  if (previous?.dispose && previous.props.text === source) {
+    fiber.dispose = previous.dispose;
+    return;
+  }
+
+  previous?.dispose?.();
+
+  fiber.dispose = createEffect(() => {
+    dom.nodeValue = String((source as TsukiTextSource)());
+  });
+}
+
 function commitWork(fiber: Fiber | undefined): void {
   let current = fiber;
 
@@ -197,7 +224,9 @@ function commitWork(fiber: Fiber | undefined): void {
       domParentOf(current)?.appendChild(current.dom);
     }
 
-    if (current.alternate && current.dom) {
+    if (current.type === "REACTIVE_TEXT") {
+      bindReactiveText(current);
+    } else if (current.alternate && current.dom) {
       updateDom(current.dom, current.alternate.props, current.props);
     }
 
@@ -224,6 +253,8 @@ function commitDeletion(fiber: Fiber): void {
 
 function cleanUpSubtree(fiber: Fiber): void {
   runHookCleanups(fiber.hooks);
+
+  fiber.dispose?.();
 
   let child = fiber.child;
 
