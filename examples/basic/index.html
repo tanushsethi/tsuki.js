@@ -16,6 +16,24 @@
       #frames {
         font-variant-numeric: tabular-nums;
       }
+      .count {
+        display: inline-block;
+        margin-right: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid currentColor;
+      }
+      @keyframes flash {
+        from {
+          background: #f5c451;
+        }
+        to {
+          background: transparent;
+        }
+      }
+      .flash-0,
+      .flash-1 {
+        animation: flash 700ms ease-out;
+      }
       #rows {
         max-height: 14rem;
         overflow-y: auto;

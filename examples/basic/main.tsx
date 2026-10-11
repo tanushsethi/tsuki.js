@@ -12,6 +12,8 @@ const [note, nextNote] = Tsuki.createSignal(0);
 
 const [noteShown, showNote] = Tsuki.createSignal(false);
 
+const [moons, countMoon] = Tsuki.createSignal(0);
+
 const rows = Tsuki.createElement(
   "div",
   { id: "rows" },
@@ -20,7 +22,7 @@ const rows = Tsuki.createElement(
   )
 );
 
-function Moons(): Tsuki.JSX.Element {
+function StateCount(): Tsuki.JSX.Element {
   const [count, setCount] = Tsuki.useState(0);
 
   Tsuki.useEffect(() => {
@@ -28,12 +30,24 @@ function Moons(): Tsuki.JSX.Element {
   }, [count]);
 
   return (
-    <p id="moons">
+    <p id="state-count" className={`count flash-${count % 2}`}>
       <button onClick={() => setCount((previous) => previous + 1)}>
         count a moon
       </button>
       {" "}
-      {count} counted
+      {count} counted by state
+    </p>
+  );
+}
+
+function SignalCount(): Tsuki.JSX.Element {
+  return (
+    <p id="signal-count" className={() => `count flash-${moons() % 2}`}>
+      <button onClick={() => countMoon((previous) => previous + 1)}>
+        count a moon
+      </button>
+      {" "}
+      {() => `${moons()} counted by a signal`}
     </p>
   );
 }
@@ -46,7 +60,8 @@ function Masthead(props: { tagline: string }): Tsuki.JSX.Element {
       <button onClick={() => document.body.classList.toggle("night")}>
         toggle the night sky
       </button>
-      <Moons />
+      <StateCount />
+      <SignalCount />
       <button
         onClick={() => turnMoon((previous) => (previous + 1) % PHASES.length)}
       >
