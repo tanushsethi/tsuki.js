@@ -15,6 +15,8 @@ const keyOf = (props: TsukiElement["props"]) =>
 
 const eventName = (key: string) => key.toLowerCase().slice(2);
 
+const isBound = (value: unknown) => typeof value === "function";
+
 function updateDom(
   dom: Node,
   previous: TsukiElement["props"],
@@ -36,6 +38,7 @@ function updateDom(
 
   Object.keys(next)
     .filter(isProperty)
+    .filter((key) => !isBound(next[key]))
     .filter((key) => previous[key] !== next[key])
     .forEach((key) => {
       (dom as unknown as Record<string, unknown>)[key] = next[key];
@@ -216,6 +219,34 @@ function bindReactiveText(fiber: Fiber): void {
   });
 }
 
+function bindProps(fiber: Fiber): void {
+  const dom = fiber.dom;
+
+  if (dom === undefined) {
+    return;
+  }
+
+  const bound = Object.keys(fiber.props).filter(
+    (key) => isProperty(key) && isBound(fiber.props[key])
+  );
+
+  fiber.alternate?.dispose?.();
+
+  if (bound.length === 0) {
+    return;
+  }
+
+  const disposers = bound.map((key) => {
+    const source = fiber.props[key] as () => unknown;
+
+    return createEffect(() => {
+      (dom as unknown as Record<string, unknown>)[key] = source();
+    });
+  });
+
+  fiber.dispose = () => disposers.forEach((dispose) => dispose());
+}
+
 function commitWork(fiber: Fiber | undefined): void {
   let current = fiber;
 
@@ -226,8 +257,12 @@ function commitWork(fiber: Fiber | undefined): void {
 
     if (current.type === "REACTIVE_TEXT") {
       bindReactiveText(current);
-    } else if (current.alternate && current.dom) {
-      updateDom(current.dom, current.alternate.props, current.props);
+    } else if (current.dom) {
+      if (current.alternate) {
+        updateDom(current.dom, current.alternate.props, current.props);
+      }
+
+      bindProps(current);
     }
 
     commitWork(current.child);
